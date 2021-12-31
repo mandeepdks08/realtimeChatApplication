@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body class="bg-light">
+    <div class="container w-50 mt-5">
+        <div class="row bg-secondary rounded-top">
+            <h1 class="text-light text-center fs-2 fw-bold mb-0">ChitChat</h1>
+        </div>
+        <div class="row" style="height: 350px;">
+            <div class="col-3 h-100 bg-info">
+                <h2 class="text-center text-light bg-danger rounded fw-bold mt-1 p-1 fs-5">Users</h2>
+                <div id="joinedUsersList">
+                    <!-- List of joined users will be shown here -->
+                </div>
+            </div>
+            <div class="col-9 h-100 bg-white p-1 overflow-auto">
+                <div class="container-fluid" id="messageContainer">
+                    <!-- All messages will come here -->
+                </div>
+            </div>
+        </div>
+        <div class="row bg-primary p-1 rounded-bottom">
+            <div class="col">
+                <form>
+                    <div class="input-group">
+                        <input type="text" placeholder="Write something here..." class="form-control me-1">
+                        <div class="input-group-append">
+                            <button class="btn btn-light" id="send" type="button">Send</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const username = `<%- username %>`;
+        const userid = `<%- userid %>`;
+        const roomid = `<%- roomid %>`;
+
+        socket.emit("rr_userDetails", username, userid, roomid);
+
+        socket.on("rr_welcome", (username, time) => {
+            const div = document.createElement("div");
+            div.innerHTML = `<div id="label" class="bg-primary rounded-top small">
+                                <span id="username" class="text-warning fw-bold small">BotOP</span><span id="time"
+                                class="text-warning fw-bold small ms-2">${time}</span>
+                            </div>
+                            <div id="message" class="bg-light text-dark rounded-bottom pb-1">
+                                <span class="fw-bold text-dark">Welcome ${username}</span>
+                            </div>`;
+            div.classList.add("row", "mb-3");
+            document.querySelector("#messageContainer").append(div);
+        });
+
+        socket.on("rr_displayUserJoined", (username, time) => {
+            const div = document.createElement("div");
+            div.innerHTML = `<div id="label" class="bg-primary rounded-top small">
+                                <span id="username" class="text-warning fw-bold small">BotOP</span><span id="time"
+                                class="text-warning fw-bold small ms-2">${time}</span>
+                            </div>
+                            <div id="message" class="bg-light text-dark rounded-bottom pb-1">
+                                <span class="fw-bold text-danger">${username}</span> has joined the chat!
+                            </div>`;
+            div.classList.add("row", "mb-3");
+            document.querySelector("#messageContainer").append(div);
+        });
+
+        socket.on("rr_messageStoC", (username, message, time) => {
+            displayMessage(username, message, time);
+        });
+
+        socket.on("rr_displayUserLeft", (username, time) => {
+            const div = document.createElement("div");
+            div.innerHTML = `<div id="label" class="bg-primary rounded-top small">
+                                <span id="username" class="text-warning fw-bold small">BotOP</span><span id="time"
+                                class="text-warning fw-bold ms-2">${time}</span>
+                            </div>
+                            <div id="message" class="bg-light text-dark rounded-bottom pb-1">
+                                <span class="fw-bold text-danger">${username}</span> has left the chat!
+                            </div>`;
+            div.classList.add("row", "mb-3");
+            document.querySelector("#messageContainer").append(div);
+        });
+
+        socket.on("rr_joinedUsersList", (joinedUsersList) => {
+            document.querySelector("#joinedUsersList").innerHTML = "";
+            for (let user of joinedUsersList) {
+                const div = document.createElement("div");
+                div.innerText = user;
+                div.classList.add("text-center", "text-dark", "fw-bold", "m-1");
+                document.querySelector("#joinedUsersList").append(div);
+            }
+        });
+
+        document.querySelector("form").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const message = document.querySelector("input").value;
+            if (message.length != 0) {
+                socket.emit("rr_messageCtoS", message);
+                document.querySelector("input").value = "";
+                document.querySelector("input").focus();
+            }
+        });
+
+        function displayMessage(username, message, time) {
+            const div = document.createElement("div");
+            const messageContainer =
+                document.querySelector("#messageContainer").parentElement;
+            div.innerHTML = `<div id="label" class="bg-primary rounded-top small">
+                                <span id="username" class="text-white small">${username}</span><span id="time"
+                                class="text-light small ms-2">${time}</span>
+                            </div>
+                            <div id="message" class="bg-light text-dark rounded-bottom pb-1">
+                                ${message}
+                            </div>`;
+            div.classList.add("row", "mb-3");
+            document.querySelector("#messageContainer").append(div);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
